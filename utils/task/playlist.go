@@ -103,7 +103,7 @@ func (a *Playlist) ShowSelect() []int {
 
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"", "Track Name", "Rating", "Type"})
+	table.SetHeader([]string{"", "音轨名称", "评级", "类型"})
 	//table.SetFooter([]string{"", "", "Footer", "Footer4"})
 	table.SetRowLine(false)
 	//table.SetAutoMergeCells(true)

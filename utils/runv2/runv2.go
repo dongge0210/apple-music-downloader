@@ -140,7 +140,7 @@ func Run(adamId string, playlistUrl string, outfile string, Config structs.Confi
 			)
 			io.Copy(io.MultiWriter(&buffer, bar), do.Body)
 			body = &buffer
-			fmt.Print("Downloaded\n")
+			fmt.Print("已下载\n")
 		} else {
 			body = do.Body
 		}
@@ -162,7 +162,7 @@ func Run(adamId string, playlistUrl string, outfile string, Config structs.Confi
 	if err != nil {
 		return err
 	}
-	fmt.Print("Decrypted\n")
+	fmt.Print("已解密\n")
 	return nil
 }
 

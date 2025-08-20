@@ -161,7 +161,7 @@ func getUrlSong(songUrl string, token string) (string, error) {
 	storefront, songId := checkUrlSong(songUrl)
 	manifest, err := ampapi.GetSongResp(storefront, songId, Config.Language, token)
 	if err != nil {
-		fmt.Println("\u26A0 Failed to get manifest:", err)
+		fmt.Println("\u26A0 获取清单失败:", err)
 		counter.NotSong++
 		return "", err
 	}
@@ -241,9 +241,9 @@ func checkArtist(artistUrl string, token string, relationship string) ([]string,
 
 	table := tablewriter.NewWriter(os.Stdout)
 	if relationship == "albums" {
-		table.SetHeader([]string{"", "Album Name", "Date", "Album ID"})
+		table.SetHeader([]string{"", "专辑名称", "发行日期", "专辑ID"})
 	} else if relationship == "music-videos" {
-		table.SetHeader([]string{"", "MV Name", "Date", "MV ID"})
+		table.SetHeader([]string{"", "MV名称", "发行日期", "MV ID"})
 	}
 	table.SetRowLine(false)
 	table.SetHeaderColor(tablewriter.Colors{},
@@ -262,18 +262,18 @@ func checkArtist(artistUrl string, token string, relationship string) ([]string,
 	}
 	table.Render()
 	if artist_select {
-		fmt.Println("You have selected all options:")
+		fmt.Println("您已选择所有选项:")
 		return urls, nil
 	}
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Please select from the " + relationship + " options above (multiple options separated by commas, ranges supported, or type 'all' to select all)")
+	fmt.Println("请从上面的 " + relationship + " 选项中选择 (多个选项用逗号分隔，支持范围选择，或输入 'all' 选择所有)")
 	cyanColor := color.New(color.FgCyan)
-	cyanColor.Print("Enter your choice: ")
+	cyanColor.Print("请输入您的选择: ")
 	input, _ := reader.ReadString('\n')
 
 	input = strings.TrimSpace(input)
 	if input == "all" {
-		fmt.Println("You have selected all options:")
+		fmt.Println("您已选择所有选项:")
 		return urls, nil
 	}
 
@@ -288,29 +288,29 @@ func checkArtist(artistUrl string, token string, relationship string) ([]string,
 		}
 	}
 
-	fmt.Println("You have selected the following options:")
+	fmt.Println("您选择了以下选项:")
 	for _, opt := range selectedOptions {
 		if len(opt) == 1 {
 			num, err := strconv.Atoi(opt[0])
 			if err != nil {
-				fmt.Println("Invalid option:", opt[0])
+				fmt.Println("无效选项:", opt[0])
 				continue
 			}
 			if num > 0 && num <= len(options) {
 				fmt.Println(options[num-1])
 				args = append(args, urls[num-1])
 			} else {
-				fmt.Println("Option out of range:", opt[0])
+				fmt.Println("选项超出范围:", opt[0])
 			}
 		} else if len(opt) == 2 {
 			start, err1 := strconv.Atoi(opt[0])
 			end, err2 := strconv.Atoi(opt[1])
 			if err1 != nil || err2 != nil {
-				fmt.Println("Invalid range:", opt)
+				fmt.Println("无效范围:", opt)
 				continue
 			}
 			if start < 1 || end > len(options) || start > end {
-				fmt.Println("Range out of range:", opt)
+				fmt.Println("范围超出界限:", opt)
 				continue
 			}
 			for i := start; i <= end; i++ {
@@ -318,7 +318,7 @@ func checkArtist(artistUrl string, token string, relationship string) ([]string,
 				args = append(args, urls[i-1])
 			}
 		} else {
-			fmt.Println("Invalid option:", opt)
+			fmt.Println("无效选项:", opt)
 		}
 	}
 	return args, nil
@@ -333,7 +333,7 @@ func writeCover(sanAlbumFolder, name string, url string) (string, error) {
 	}
 	exists, err := fileExists(covPath)
 	if err != nil {
-		fmt.Println("Failed to check if cover exists.")
+		fmt.Println("检查封面是否存在失败。")
 		return "", err
 	}
 	if exists {
@@ -422,20 +422,20 @@ func setDlFlags(quality string) {
 	switch quality {
 	case "atmos":
 		dl_atmos = true
-		fmt.Println("Quality set to: Dolby Atmos")
+		fmt.Println("音质设置为: 杜比全景声")
 	case "aac":
 		dl_aac = true
 		*aac_type = "aac"
-		fmt.Println("Quality set to: High-Quality (AAC)")
+		fmt.Println("音质设置为: 高品质 (AAC)")
 	case "alac":
-		fmt.Println("Quality set to: Lossless (ALAC)")
+		fmt.Println("音质设置为: 无损 (ALAC)")
 	}
 }
 
 // promptForQuality asks the user to select a download quality for the chosen media.
 func promptForQuality(item SearchResultItem, token string) (string, error) {
 	if item.Type == "Artist" {
-		fmt.Println("Artist selected. Proceeding to list all albums/videos.")
+		fmt.Println("已选择歌手，正在列出所有专辑/视频。")
 		return "default", nil
 	}
 
@@ -540,7 +540,7 @@ func handleSearch(searchType string, queryParts []string, token string) (string,
 		}
 
 		if len(items) == 0 && offset == 0 {
-			fmt.Println("No results found.")
+			fmt.Println("未找到结果。")
 			return "", nil
 		}
 
@@ -592,7 +592,7 @@ func handleSearch(searchType string, queryParts []string, token string) (string,
 			return "", fmt.Errorf("could not process quality selection: %w", err)
 		}
 		if quality == "" { // User cancelled quality selection
-			fmt.Println("Selection cancelled.")
+			fmt.Println("选择已取消。")
 			return "", nil
 		}
 
@@ -617,12 +617,12 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 	//mv dl dev
 	if track.Type == "music-videos" {
 		if len(mediaUserToken) <= 50 {
-			fmt.Println("meida-user-token is not set, skip MV dl")
+			fmt.Println("未设置 media-user-token，跳过 MV 下载")
 			counter.Success++
 			return
 		}
 		if _, err := exec.LookPath("mp4decrypt"); err != nil {
-			fmt.Println("mp4decrypt is not found, skip MV dl")
+			fmt.Println("未找到 mp4decrypt，跳过 MV 下载")
 			counter.Success++
 			return
 		}
@@ -724,7 +724,7 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 			if Config.SaveLrcFile {
 				err := writeLyrics(track.SaveDir, lrcFilename, lrcStr)
 				if err != nil {
-					fmt.Printf("Failed to write lyrics")
+					fmt.Printf("写入歌词失败")
 				}
 			}
 			if Config.EmbedLrc {
@@ -735,17 +735,17 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 
 	exists, err := fileExists(trackPath)
 	if err != nil {
-		fmt.Println("Failed to check if track exists.")
+		fmt.Println("检查音轨是否存在时失败。")
 	}
 	if exists {
-		fmt.Println("Track already exists locally.")
+		fmt.Println("音轨已在本地存在。")
 		counter.Success++
 		okDict[track.PreID] = append(okDict[track.PreID], track.TaskNum)
 		return
 	}
 	if needDlAacLc {
 		if len(mediaUserToken) <= 50 {
-			fmt.Println("Invalid media-user-token")
+			fmt.Println("无效的 media-user-token")
 			counter.Error++
 			return
 		}
@@ -1610,7 +1610,7 @@ func main() {
 		if Config.AuthorizationToken != "" && Config.AuthorizationToken != "your-authorization-token" {
 			token = strings.Replace(Config.AuthorizationToken, "Bearer ", "", -1)
 		} else {
-			fmt.Println("Failed to get token.")
+			fmt.Println("获取令牌失败。")
 			return
 		}
 	}
@@ -1697,18 +1697,18 @@ func main() {
 			var storefront, albumId string
 
 			if strings.Contains(urlRaw, "/music-video/") {
-				fmt.Println("Music Video")
+				fmt.Println("音乐视频")
 				if debug_mode {
 					continue
 				}
 				counter.Total++
 				if len(Config.MediaUserToken) <= 50 {
-					fmt.Println(": meida-user-token is not set, skip MV dl")
+					fmt.Println(": 未设置 media-user-token，跳过 MV 下载")
 					counter.Success++
 					continue
 				}
 				if _, err := exec.LookPath("mp4decrypt"); err != nil {
-					fmt.Println(": mp4decrypt is not found, skip MV dl")
+					fmt.Println(": 未找到 mp4decrypt，跳过 MV 下载")
 					counter.Success++
 					continue
 				}
@@ -1752,32 +1752,32 @@ func main() {
 			var urlArg_i = parse.Query().Get("i")
 
 			if strings.Contains(urlRaw, "/album/") {
-				fmt.Println("Album")
+				fmt.Println("专辑")
 				storefront, albumId = checkUrl(urlRaw)
 				err := ripAlbum(albumId, token, storefront, Config.MediaUserToken, urlArg_i)
 				if err != nil {
-					fmt.Println("Failed to rip album:", err)
+					fmt.Println("专辑下载失败:", err)
 				}
 			} else if strings.Contains(urlRaw, "/playlist/") {
-				fmt.Println("Playlist")
+				fmt.Println("播放列表")
 				storefront, albumId = checkUrlPlaylist(urlRaw)
 				err := ripPlaylist(albumId, token, storefront, Config.MediaUserToken)
 				if err != nil {
-					fmt.Println("Failed to rip playlist:", err)
+					fmt.Println("播放列表下载失败:", err)
 				}
 			} else if strings.Contains(urlRaw, "/station/") {
-				fmt.Printf("Station")
+				fmt.Printf("电台")
 				storefront, albumId = checkUrlStation(urlRaw)
 				if len(Config.MediaUserToken) <= 50 {
-					fmt.Println(": meida-user-token is not set, skip station dl")
+					fmt.Println(": 未设置 media-user-token，跳过电台下载")
 					continue
 				}
 				err := ripStation(albumId, token, storefront, Config.MediaUserToken)
 				if err != nil {
-					fmt.Println("Failed to rip station:", err)
+					fmt.Println("电台下载失败:", err)
 				}
 			} else {
-				fmt.Println("Invalid type")
+				fmt.Println("无效类型")
 			}
 		}
 		fmt.Printf("=======  [\u2714 ] Completed: %d/%d  |  [\u26A0 ] Warnings: %d  |  [\u2716 ] Errors: %d  =======\n", counter.Success, counter.Total, counter.Unavailable+counter.NotSong, counter.Error)
@@ -2001,7 +2001,7 @@ func checkM3u8(b string, f string) (string, error) {
 		}
 		defer conn.Close()
 		if f == "song" {
-			fmt.Println("Connected to device")
+			fmt.Println("已连接到设备")
 		}
 
 		adamIDBuffer := []byte(adamID)
@@ -2040,7 +2040,7 @@ func checkM3u8(b string, f string) (string, error) {
 
 func formatAvailability(available bool, quality string) string {
 	if !available {
-		return "Not Available"
+		return "不可用"
 	}
 	return quality
 }
@@ -2146,13 +2146,13 @@ func extractMedia(b string, more_mode bool) (string, string, error) {
 			}
 		}
 
-		fmt.Println("Available Audio Formats:")
+		fmt.Println("可用音频格式:")
 		fmt.Println("------------------------")
 		fmt.Printf("AAC             : %s\n", formatAvailability(hasAAC, aacQuality))
-		fmt.Printf("Lossless        : %s\n", formatAvailability(hasLossless, losslessQuality))
-		fmt.Printf("Hi-Res Lossless : %s\n", formatAvailability(hasHiRes, hiResQuality))
-		fmt.Printf("Dolby Atmos     : %s\n", formatAvailability(hasAtmos, atmosQuality))
-		fmt.Printf("Dolby Audio     : %s\n", formatAvailability(hasDolbyAudio, dolbyAudioQuality))
+		fmt.Printf("无损音质        : %s\n", formatAvailability(hasLossless, losslessQuality))
+		fmt.Printf("高解析度无损    : %s\n", formatAvailability(hasHiRes, hiResQuality))
+		fmt.Printf("杜比全景声      : %s\n", formatAvailability(hasAtmos, atmosQuality))
+		fmt.Printf("杜比音效        : %s\n", formatAvailability(hasDolbyAudio, dolbyAudioQuality))
 		fmt.Println("------------------------")
 
 		return "", "", nil
