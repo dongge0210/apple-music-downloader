@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Eyevinn/mp4ff/mp4"
+	"github.com/itouakirai/mp4ff/mp4"
 	"github.com/grafov/m3u8"
 
 	"encoding/binary"
@@ -624,7 +624,6 @@ func cbcsDecryptSamples(samples []mp4.FullSample, conn *bufio.ReadWriter,
 func DecryptFragment(frag *mp4.Fragment, tracks map[uint32]mp4.DecryptTrackInfo, conn *bufio.ReadWriter) error {
 	moof := frag.Moof
 	var bytesRemoved uint64 = 0
-	var sxxxBytesRemoved uint64
 
 	for _, traf := range moof.Trafs {
 		ti, ok := tracks[traf.Tfhd.TrackID]
@@ -675,9 +674,6 @@ func DecryptFragment(frag *mp4.Fragment, tracks map[uint32]mp4.DecryptTrackInfo,
 		}
 
 		bytesRemoved += traf.RemoveEncryptionBoxes()
-		// remove sbgp and sgpd
-		traf.Children, sxxxBytesRemoved = FilterSbgpSgpd(traf.Children)
-		bytesRemoved += sxxxBytesRemoved
 	}
 	_, psshBytesRemoved := moof.RemovePsshs()
 	bytesRemoved += psshBytesRemoved
