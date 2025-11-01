@@ -249,10 +249,127 @@ h2 {
 }
 
 .progress-section {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 30px;
     margin-top: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.download-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background: var(--bg-color);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.track-progress {
+    margin: 25px 0;
     padding: 20px;
     background: var(--bg-color);
-    border-radius: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.track-progress h4 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+.track-info {
+    margin-bottom: 15px;
+}
+
+.track-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.track-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.track-progress-bar {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.track-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.core-output {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--bg-color);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.core-output h4 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.output-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #1e1e1e;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+}
+
+.core-log-entry {
+    color: #00ff00;
+    margin-bottom: 2px;
+    word-wrap: break-word;
+}
+
+.core-log-entry.error {
+    color: #ff4444;
+}
+
+.core-log-entry.success {
+    color: #44ff44;
+}
+
+.core-log-entry.warning {
+    color: #ffaa44;
 }
 
 .progress-container {

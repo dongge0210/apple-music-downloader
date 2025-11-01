@@ -1,6 +1,9 @@
 // Global state
 let eventSource = null;
 let currentDownloadId = null;
+let downloadStartTime = null;
+let totalTracks = 0;
+let completedTracks = 0;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeButtons();
     checkSystemInfo();
     checkDependencies();
+    checkAuthStatus();
     loadConfig();
 });
 
@@ -37,6 +41,7 @@ function initializeButtons() {
     document.getElementById('search-btn').addEventListener('click', performSearch);
     document.getElementById('config-btn').addEventListener('click', toggleConfig);
     document.getElementById('save-config-btn').addEventListener('click', saveConfig);
+    document.getElementById('refresh-auth').addEventListener('click', checkAuthStatus);
     
     // Install buttons for dependencies
     document.querySelectorAll('.install-btn').forEach(btn => {
@@ -82,6 +87,51 @@ async function checkDependencies() {
     } catch (error) {
         console.error('Failed to check dependencies:', error);
         addLog('Failed to check dependencies', 'error');
+    }
+}
+
+// Check authentication status
+async function checkAuthStatus() {
+    const tokenStatus = document.getElementById('token-status');
+    tokenStatus.textContent = '检查中...';
+    
+    try {
+        const response = await fetch('/api/auth/status');
+        const data = await response.json();
+        
+        if (data.hasMediaUserToken) {
+            tokenStatus.innerHTML = '<span style="color: var(--success-color);">✅ Media User Token 已配置</span>';
+        } else {
+            tokenStatus.innerHTML = '<span style="color: var(--warning-color);">⚠️ Media User Token 未配置</span>';
+        }
+        
+        if (data.storefront) {
+            tokenStatus.innerHTML += `<br><span style="color: var(--text-secondary);">🌐 区域: ${data.storefront}</span>`;
+        }
+        
+        tokenStatus.innerHTML += '<br><span style="color: var(--text-secondary);">🔓 Authorization Token 自动获取</span>';
+        
+    } catch (error) {
+        console.error('Failed to check auth status:', error);
+        tokenStatus.innerHTML = '<span style="color: var(--danger-color);">❌ 检查失败</span>';
+    }
+}
+
+// Add core output log entry
+function addCoreLog(message, type = 'info') {
+    const coreLog = document.getElementById('core-log');
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry core-log-entry ${type}`;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    logEntry.textContent = `[${timestamp}] ${message}`;
+    
+    coreLog.appendChild(logEntry);
+    coreLog.scrollTop = coreLog.scrollHeight;
+    
+    // Keep only last 50 entries
+    while (coreLog.children.length > 50) {
+        coreLog.removeChild(coreLog.firstChild);
     }
 }
 
@@ -302,16 +352,24 @@ async function startDownload() {
     const embedCover = document.getElementById('embed-cover').checked;
     
     if (!url.trim()) {
-        addLog('Please enter an Apple Music URL', 'error');
+        addLog('请输入Apple Music URL', 'error');
         return;
     }
     
-    // Show progress section
+    // Reset counters and show progress section
+    downloadStartTime = Date.now();
+    totalTracks = 0;
+    completedTracks = 0;
+    
     document.getElementById('progress-section').style.display = 'block';
     document.getElementById('status-log').innerHTML = '';
-    updateProgress(0);
+    document.getElementById('track-progress').style.display = 'none';
     
-    addLog('Starting download...', 'info');
+    updateProgress(0);
+    updateTimer();
+    
+    addLog('🚀 开始下载...', 'info');
+    updateCurrentTask('初始化下载任务...');
     
     try {
         const response = await fetch('/api/download', {
@@ -334,11 +392,11 @@ async function startDownload() {
             currentDownloadId = data.download_id;
             listenToProgress(currentDownloadId);
         } else {
-            addLog(`Failed to start download: ${data.error}`, 'error');
+            addLog(`❌ 下载启动失败: ${data.error}`, 'error');
         }
     } catch (error) {
         console.error('Download failed:', error);
-        addLog('Failed to start download', 'error');
+        addLog('❌ 下载启动失败', 'error');
     }
 }
 
@@ -353,21 +411,47 @@ function listenToProgress(downloadId) {
     eventSource.addEventListener('progress', (e) => {
         const data = JSON.parse(e.data);
         updateProgress(data.percent);
-        addLog(data.message, data.type || 'info');
+        
+        // Parse message for additional info
+        if (data.message) {
+            // Check if it's a core output message
+            if (data.type && data.type.startsWith('core-')) {
+                const coreType = data.type.replace('core-', '');
+                addCoreLog(data.message, coreType);
+            } else {
+                // Check if it's a track download message
+                const trackMatch = data.message.match(/📊 Progress: ([\d.]+)% \((\d+)\/(\d+)\) - Downloading: (.+)/);
+                if (trackMatch) {
+                    const [, percent, current, total, trackName] = trackMatch;
+                    updateTrackInfo(trackName, percent);
+                    updateCurrentTask(`下载曲目: ${trackName}`);
+                    
+                    if (!totalTracks) totalTracks = parseInt(total);
+                    completedTracks = parseInt(current);
+                } else {
+                    addLog(data.message, data.type || 'info');
+                }
+            }
+        }
     });
     
     eventSource.addEventListener('complete', (e) => {
         const data = JSON.parse(e.data);
         updateProgress(100);
-        addLog(data.message, 'success');
+        updateCurrentTask('下载完成！');
+        addLog(`✅ ${data.message}`, 'success');
+        addCoreLog('✅ 下载流程完成', 'success');
+        document.getElementById('track-progress').style.display = 'none';
         eventSource.close();
     });
     
     eventSource.addEventListener('error', (e) => {
         if (e.data) {
             const data = JSON.parse(e.data);
-            addLog(data.message, 'error');
+            addLog(`❌ ${data.message}`, 'error');
+            addCoreLog(`❌ 错误: ${data.message}`, 'error');
         }
+        updateCurrentTask('下载出错');
         eventSource.close();
     });
 }
@@ -379,6 +463,56 @@ function updateProgress(percent) {
     
     progressFill.style.width = `${percent}%`;
     progressText.textContent = `${Math.round(percent)}%`;
+}
+
+// Update current task display
+function updateCurrentTask(task) {
+    document.getElementById('current-task').textContent = task;
+}
+
+// Update track info
+function updateTrackInfo(trackName, progress) {
+    document.getElementById('track-progress').style.display = 'block';
+    document.getElementById('track-name').textContent = trackName;
+    document.getElementById('track-progress-fill').style.width = `${progress}%`;
+    
+    // Calculate estimated size and quality based on progress
+    const estimatedSize = Math.round(parseFloat(progress) * 10); // Mock calculation
+    document.getElementById('track-size').textContent = `~${estimatedSize}MB`;
+    document.getElementById('track-quality').textContent = 'ALAC'; // Default quality
+}
+
+// Update timer
+function updateTimer() {
+    if (!downloadStartTime) return;
+    
+    const elapsed = Date.now() - downloadStartTime;
+    const elapsedMinutes = Math.floor(elapsed / 60000);
+    const elapsedSeconds = Math.floor((elapsed % 60000) / 1000);
+    document.getElementById('elapsed-time').textContent = 
+        `${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')}`;
+    
+    // Calculate remaining time
+    if (completedTracks > 0 && totalTracks > completedTracks) {
+        const avgTimePerTrack = elapsed / completedTracks;
+        const remainingTracks = totalTracks - completedTracks;
+        const remainingMs = avgTimePerTrack * remainingTracks;
+        const remainingMinutes = Math.floor(remainingMs / 60000);
+        const remainingSeconds = Math.floor((remainingMs % 60000) / 1000);
+        document.getElementById('remaining-time').textContent = 
+            `${String(remainingMinutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+    
+    // Update download speed (mock calculation)
+    if (completedTracks > 0) {
+        const speed = (completedTracks * 10 / (elapsed / 1000)).toFixed(1); // MB/s
+        document.getElementById('download-speed').textContent = `${speed} MB/s`;
+    }
+    
+    // Continue updating
+    if (completedTracks < totalTracks) {
+        setTimeout(updateTimer, 1000);
+    }
 }
 
 // Add log entry

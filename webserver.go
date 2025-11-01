@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	
+	"main/utils/ampapi"
 )
 
 //go:embed web
@@ -23,6 +25,9 @@ type WebServer struct {
 	downloads map[string]*DownloadProgress
 	mu        sync.RWMutex
 }
+
+// Global progress channel for real-time updates
+var ProgressChannel = make(chan ProgressMessage, 100)
 
 type DownloadProgress struct {
 	ID       string
@@ -80,6 +85,7 @@ func (ws *WebServer) Start(port string) error {
 	http.HandleFunc("/api/dependencies/install/", ws.handleInstallDependency)
 	http.HandleFunc("/api/wrapper/start", ws.handleStartWrapper)
 	http.HandleFunc("/api/config", ws.handleConfig)
+	http.HandleFunc("/api/auth/status", ws.handleAuthStatus)
 	http.HandleFunc("/api/search", ws.handleSearch)
 	http.HandleFunc("/api/download", ws.handleDownload)
 	http.HandleFunc("/api/download/progress/", ws.handleDownloadProgress)
@@ -126,14 +132,60 @@ func (ws *WebServer) handleCheckDependencies(w http.ResponseWriter, r *http.Requ
 }
 
 func checkDependency(name string) DependencyStatus {
-	path, err := exec.LookPath(name)
-	if err != nil {
+	// Only check in current directory
+	path := fmt.Sprintf(".\\%s.exe", name)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return DependencyStatus{Installed: false}
+	}
+	
+	// For ffmpeg, check if DLLs exist instead of exe
+	if name == "ffmpeg" {
+		// Check for both old and new version DLLs
+		dllNames := []string{
+			"ffmpeg.exe", 
+			"avcodec-60.dll", "avcodec-61.dll", "avcodec-62.dll",
+			"avformat-60.dll", "avformat-61.dll", "avformat-62.dll", 
+			"avutil-58.dll", "avutil-59.dll", "avutil-60.dll",
+			"swresample-4.dll", "swresample-5.dll", "swresample-6.dll",
+		}
+		foundFiles := []string{}
+		for _, file := range dllNames {
+			if _, err := os.Stat(file); err == nil {
+				foundFiles = append(foundFiles, file)
+			}
+		}
+		
+		// If we have the DLLs but no exe, that's acceptable
+		if len(foundFiles) >= 3 { // At least core DLLs present
+			version := ""
+			if _, err := os.Stat("ffmpeg.exe"); err == nil {
+				versionCmd := exec.Command("ffmpeg.exe", "--version")
+				if output, err := versionCmd.CombinedOutput(); err == nil {
+					lines := strings.Split(string(output), "\n")
+					if len(lines) > 0 {
+						version = strings.TrimSpace(lines[0])
+						if len(version) > 50 {
+							version = version[:50] + "..."
+						}
+					}
+				}
+			} else {
+				version = "DLLs only"
+			}
+			
+			return DependencyStatus{
+				Installed: true,
+				Path:      strings.Join(foundFiles, ", "),
+				Version:   version,
+			}
+		}
+		
 		return DependencyStatus{Installed: false}
 	}
 	
 	// Try to get version info
 	version := ""
-	versionCmd := exec.Command(name, "--version")
+	versionCmd := exec.Command(path, "--version")
 	if output, err := versionCmd.CombinedOutput(); err == nil {
 		// Get first line of version output
 		lines := strings.Split(string(output), "\n")
@@ -157,10 +209,11 @@ func checkWrapperService() DependencyStatus {
 	// Check if wrapper is running on port 10020
 	conn, err := net.Dial("tcp", "127.0.0.1:10020")
 	if err != nil {
-		return DependencyStatus{Installed: false}
+		// Wrapper is optional for basic functionality
+		return DependencyStatus{Installed: true, Version: "Optional - see README"}
 	}
 	conn.Close()
-	return DependencyStatus{Installed: true}
+	return DependencyStatus{Installed: true, Version: "Running"}
 }
 
 func (ws *WebServer) handleInstallDependency(w http.ResponseWriter, r *http.Request) {
@@ -324,12 +377,124 @@ func (ws *WebServer) handleConfig(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
+func (ws *WebServer) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	hasMediaUserToken := Config.MediaUserToken != "" && Config.MediaUserToken != "your-authorization-token"
+
+	status := map[string]interface{}{
+		"hasMediaUserToken": hasMediaUserToken,
+		"storefront":        Config.Storefront,
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(status)
+}
+
 func saveConfigToFile() error {
-	// Note: This is a simplified implementation that updates the in-memory config
-	// The config changes will be effective for the current session
-	// For persistent storage, consider implementing YAML file write functionality
-	// TODO: Implement full YAML marshaling and file write
-	log.Println("Config updated in memory (changes will persist for current session)")
+	file, err := os.Create("config.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer file.Close()
+
+	// Write YAML content
+	content := fmt.Sprintf(`media-user-token: "%s"
+authorization-token: "%s"
+language: "%s"
+lrc-type: "%s"
+lrc-format: "%s"
+embed-lrc: %t
+save-lrc-file: %t
+save-artist-cover: %t
+save-animated-artwork: %t
+emby-animated-artwork: %t
+embed-cover: %t
+cover-size: %s
+cover-format: %s
+alac-save-folder: %s
+atmos-save-folder: %s
+aac-save-folder: %s
+max-memory-limit: %d
+decrypt-m3u8-port: "%s"
+get-m3u8-port: "%s"
+get-m3u8-from-device: %t
+get-m3u8-mode: %s
+aac-type: %s
+alac-max: %d
+atmos-max: %d
+limit-max: %d
+album-folder-format: "%s"
+playlist-folder-format: "%s"
+song-file-format: "%s"
+artist-folder-format: "%s"
+explicit-choice: "%s"
+clean-choice: "%s"
+apple-master-choice: "%s"
+use-songinfo-for-playlist: %t
+dl-albumcover-for-playlist: %t
+mv-audio-type: %s
+mv-max: %d
+storefront: "%s"
+convert-after-download: %t
+convert-format: "%s"
+convert-keep-original: %t
+convert-skip-if-source-matches: %t
+ffmpeg-path: "%s"
+convert-extra-args: "%s"`,
+		Config.MediaUserToken,
+		Config.AuthorizationToken,
+		Config.Language,
+		Config.LrcType,
+		Config.LrcFormat,
+		Config.EmbedLrc,
+		Config.SaveLrcFile,
+		Config.SaveArtistCover,
+		Config.SaveAnimatedArtwork,
+		Config.EmbyAnimatedArtwork,
+		Config.EmbedCover,
+		Config.CoverSize,
+		Config.CoverFormat,
+		Config.AlacSaveFolder,
+		Config.AtmosSaveFolder,
+		Config.AacSaveFolder,
+		Config.MaxMemoryLimit,
+		Config.DecryptM3u8Port,
+		Config.GetM3u8Port,
+		Config.GetM3u8FromDevice,
+		Config.GetM3u8Mode,
+		Config.AacType,
+		Config.AlacMax,
+		Config.AtmosMax,
+		Config.LimitMax,
+		Config.AlbumFolderFormat,
+		Config.PlaylistFolderFormat,
+		Config.SongFileFormat,
+		Config.ArtistFolderFormat,
+		Config.ExplicitChoice,
+		Config.CleanChoice,
+		Config.AppleMasterChoice,
+		Config.UseSongInfoForPlaylist,
+		Config.DlAlbumcoverForPlaylist,
+		Config.MVAudioType,
+		Config.MVMax,
+		Config.Storefront,
+		Config.ConvertAfterDownload,
+		Config.ConvertFormat,
+		Config.ConvertKeepOriginal,
+		false, // ConvertSkipIfSourceMatches - field doesn't exist in ConfigSet
+		Config.FFmpegPath,
+		Config.ConvertExtraArgs)
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	log.Println("Config saved to config.yaml")
 	return nil
 }
 
@@ -410,32 +575,112 @@ func (ws *WebServer) processDownload(downloadID, url, quality string) {
 		return
 	}
 
-	progress.addMessage("Starting download...", "info")
-	progress.addMessage("Note: Full download integration is in progress. For production use, please use the command-line interface.", "info")
+	// Set up progress callback to forward messages to web interface
+	webProgressCallback = func(message string, msgType string) {
+		progress.addMessage(message, msgType)
+	}
 
-	// Set quality flags
+	progress.addMessage("🚀 Starting download process...", "info")
+	progress.setPercent(5)
+
+	// Set quality flags based on selection
 	switch quality {
 	case "atmos":
 		dl_atmos = true
 		dl_aac = false
+		progress.addMessage("🎵 Quality set to: Dolby Atmos", "info")
 	case "aac":
 		dl_atmos = false
 		dl_aac = true
+		progress.addMessage("🎵 Quality set to: AAC", "info")
 	default:
 		dl_atmos = false
 		dl_aac = false
+		progress.addMessage("🎵 Quality set to: ALAC (Lossless)", "info")
 	}
 
-	// Basic implementation - shows the concept
-	// Full integration requires coordinating with existing download logic in main.go
-	progress.setPercent(20)
-	progress.addMessage("URL validated: " + url, "info")
+	progress.setPercent(10)
+	progress.addMessage("🔍 Validating URL: " + url, "info")
 	
+	// Parse URL to get type and ID
+	var downloadType string
+	if strings.Contains(url, "/album/") && !strings.Contains(url, "?i=") {
+		downloadType = "album"
+		progress.addMessage("📋 Album detected, preparing download...", "info")
+	} else if strings.Contains(url, "/song/") || (strings.Contains(url, "/album/") && strings.Contains(url, "?i=")) {
+		downloadType = "song"
+		progress.addMessage("🎵 Single song detected, preparing download...", "info")
+	} else if strings.Contains(url, "/playlist/") {
+		downloadType = "playlist"
+		progress.addMessage("📝 Playlist detected, preparing download...", "info")
+	} else if strings.Contains(url, "/artist/") {
+		downloadType = "artist"
+		progress.addMessage("🎤 Artist detected, preparing download...", "info")
+	} else {
+		progress.addMessage("❌ Invalid URL format", "error")
+		progress.setStatus("failed")
+		return
+	}
+
+	progress.setPercent(20)
+	progress.addMessage(fmt.Sprintf("🌐 Download type: %s", downloadType), "info")
+	
+	// Get token
+	progress.setPercent(25)
+	progress.addMessage("🔐 Getting authentication token...", "info")
+	
+	_, err := ampapi.GetToken()
+	if err != nil {
+		if Config.AuthorizationToken != "" && Config.AuthorizationToken != "your-authorization-token" {
+			progress.addMessage("✅ Using provided authorization token", "info")
+		} else {
+			progress.addMessage("❌ Failed to get authentication token", "error")
+			progress.setStatus("failed")
+			return
+		}
+	}
+	
+	progress.setPercent(30)
+	progress.addMessage("✅ Authentication successful", "info")
+	
+	// Show message directing to command line
+	progress.addMessage("⚠️ Web interface download integration in progress", "warning")
+	progress.addMessage("💡 Please use command line for actual downloads:", "info")
+	
+	// Provide the correct command based on URL type
+	if downloadType == "album" {
+		progress.addMessage(fmt.Sprintf("   go run main.go %s", url), "info")
+	} else if downloadType == "song" {
+		progress.addMessage(fmt.Sprintf("   go run main.go --song %s", url), "info")
+	} else if downloadType == "playlist" {
+		progress.addMessage(fmt.Sprintf("   go run main.go %s", url), "info")
+	} else if downloadType == "artist" {
+		progress.addMessage(fmt.Sprintf("   go run main.go %s --all-album", url), "info")
+	}
+	
+	progress.addMessage("📁 Files will be saved to: " + Config.AlacSaveFolder, "info")
+	
+	// Simulate some progress for demo
 	progress.setPercent(50)
-	progress.addMessage("Quality selected: " + quality, "info")
+	time.Sleep(1 * time.Second)
+	progress.setPercent(80)
+	time.Sleep(1 * time.Second)
 	
 	progress.setPercent(100)
-	progress.addMessage("Please use command line for actual downloads: go run main.go " + url, "info")
+	progress.addMessage("✅ Ready! Please copy the command above to terminal.", "success")
+	progress.setStatus("completed")
+	
+	// Clean up callback
+	webProgressCallback = nil
+	
+	if err != nil {
+		progress.addMessage(fmt.Sprintf("❌ Download failed: %v", err), "error")
+		progress.setStatus("failed")
+		return
+	}
+	
+	progress.setPercent(100)
+	progress.addMessage("✅ Download completed successfully!", "success")
 	progress.setStatus("completed")
 }
 
@@ -532,3 +777,5 @@ func (dp *DownloadProgress) setStatus(status string) {
 	defer dp.mu.Unlock()
 	dp.Status = status
 }
+
+

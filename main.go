@@ -52,6 +52,8 @@ var (
 	Config         structs.ConfigSet
 	counter        structs.Counter
 	okDict         = make(map[string][]int)
+	// Web progress callback
+	webProgressCallback func(string, string)
 )
 
 func loadConfig() error {
@@ -1522,7 +1524,17 @@ func ripPlaylist(playlistId string, token string, storefront string, mediaUserTo
 	if dl_aac {
 		singerFolder = filepath.Join(Config.AacSaveFolder, forbiddenNames.ReplaceAllString(singerFoldername, "_"))
 	}
-	os.MkdirAll(singerFolder, os.ModePerm)
+	fmt.Printf("📁 Creating save directory: %s\n", singerFolder)
+	sendCoreOutput(fmt.Sprintf("📁 Creating save directory: %s", singerFolder), "info")
+	
+	err = os.MkdirAll(singerFolder, os.ModePerm)
+	if err != nil {
+		fmt.Printf("❌ Failed to create directory: %v\n", err)
+		sendCoreOutput(fmt.Sprintf("❌ Failed to create directory: %v", err), "error")
+		return err
+	}
+	fmt.Printf("✅ Directory created successfully: %s\n", singerFolder)
+	sendCoreOutput(fmt.Sprintf("✅ Directory created successfully: %s", singerFolder), "success")
 	playlist.SaveDir = singerFolder
 
 	var Quality string
@@ -1670,17 +1682,32 @@ func ripPlaylist(playlistId string, token string, storefront string, mediaUserTo
 	} else {
 		selected = playlist.ShowSelect()
 	}
-	for i := range playlist.Tracks {
-		i++
-		if isInArray(okDict[playlistId], i) {
+	totalTracks := len(selected)
+	fmt.Printf("🎵 Starting download of %d tracks...\n", totalTracks)
+	sendWebProgress(fmt.Sprintf("🎵 Starting download of %d tracks...", totalTracks), "info")
+	
+	for trackIndex := range playlist.Tracks {
+		trackNum := trackIndex + 1
+		if isInArray(okDict[playlistId], trackNum) {
 			counter.Total++
 			counter.Success++
 			continue
 		}
-		if isInArray(selected, i) {
-			ripTrack(&playlist.Tracks[i-1], token, mediaUserToken)
+		if isInArray(selected, trackNum) {
+			trackName := playlist.Tracks[trackIndex].Resp.Attributes.Name
+			progress := float64(trackIndex+1) / float64(totalTracks) * 100
+			progressMsg := fmt.Sprintf("📊 Progress: %.1f%% (%d/%d) - Downloading: %s", 
+				progress, trackIndex+1, totalTracks, trackName)
+			
+			fmt.Printf("%s\n", progressMsg)
+			sendWebProgress(progressMsg, "info")
+			
+			ripTrack(&playlist.Tracks[trackIndex], token, mediaUserToken)
 		}
 	}
+	completedMsg := fmt.Sprintf("✅ Download completed! %d tracks processed.\n", len(selected))
+	fmt.Printf("%s\n", completedMsg)
+	sendWebProgress(completedMsg, "success")
 	return nil
 }
 
@@ -1773,12 +1800,45 @@ func writeMP4Tags(track *task.Track, lrc string) error {
 	return nil
 }
 
+// Send progress update to web interface
+func sendWebProgress(message string, msgType string) {
+	if webProgressCallback != nil {
+		webProgressCallback(message, msgType)
+	}
+}
+
+// Send core output to web interface
+func sendCoreOutput(message string, msgType string) {
+	if webProgressCallback != nil {
+		webProgressCallback(message, "core-" + msgType)
+	}
+}
+
 func main() {
+	fmt.Println("🔧 Loading configuration...")
+	sendCoreOutput("🔧 Loading configuration...", "info")
+	
 	err := loadConfig()
 	if err != nil {
-		fmt.Printf("load Config failed: %v", err)
+		fmt.Printf("❌ load Config failed: %v\n", err)
+		sendCoreOutput(fmt.Sprintf("❌ load Config failed: %v", err), "error")
 		return
 	}
+	fmt.Printf("✅ Configuration loaded successfully\n")
+	sendCoreOutput("✅ Configuration loaded successfully", "success")
+	
+	fmt.Printf("📁 ALAC save folder: %s\n", Config.AlacSaveFolder)
+	sendCoreOutput(fmt.Sprintf("📁 ALAC save folder: %s", Config.AlacSaveFolder), "info")
+	
+	fmt.Printf("📁 Atmos save folder: %s\n", Config.AtmosSaveFolder)
+	sendCoreOutput(fmt.Sprintf("📁 Atmos save folder: %s", Config.AtmosSaveFolder), "info")
+	
+	fmt.Printf("📁 AAC save folder: %s\n", Config.AacSaveFolder)
+	sendCoreOutput(fmt.Sprintf("📁 AAC save folder: %s", Config.AacSaveFolder), "info")
+	
+	fmt.Printf("🌐 Storefront: %s\n", Config.Storefront)
+	sendCoreOutput(fmt.Sprintf("🌐 Storefront: %s", Config.Storefront), "info")
+
 
 	var web_mode bool
 	var web_port string
@@ -1807,16 +1867,6 @@ func main() {
 	}
 
 	pflag.Parse()
-
-	// Start web server if --web flag is present
-	if web_mode {
-		fmt.Println("🎵 Starting Apple Music Downloader Web GUI...")
-		ws := NewWebServer()
-		if err := ws.Start(web_port); err != nil {
-			fmt.Printf("Failed to start web server: %v\n", err)
-		}
-		return
-	}
 
 	token, err := ampapi.GetToken()
 	if err != nil {

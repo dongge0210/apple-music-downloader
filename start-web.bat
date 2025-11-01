@@ -36,22 +36,19 @@ REM Check for dependencies
 echo 📦 Checking dependencies...
 echo.
 
-where MP4Box >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
+if exist "MP4Box.exe" (
     echo   ✅ MP4Box is installed
 ) else (
     echo   ❌ MP4Box is not installed
 )
 
-where mp4decrypt >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
+if exist "mp4decrypt.exe" (
     echo   ✅ mp4decrypt is installed
 ) else (
     echo   ❌ mp4decrypt is not installed
 )
 
-where ffmpeg >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
+if exist "ffmpeg.exe" (
     echo   ✅ ffmpeg is installed
 ) else (
     echo   ❌ ffmpeg is not installed

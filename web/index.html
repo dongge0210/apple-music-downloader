@@ -18,6 +18,14 @@
             <div class="env-info" id="env-info" style="margin-bottom: 15px; padding: 10px; background: var(--bg-color); border-radius: 8px; font-size: 0.9em;">
                 <strong>🖥️ 系统环境:</strong> <span id="system-info">检测中...</span>
             </div>
+            
+            <div class="auth-status" id="auth-status" style="margin-bottom: 15px; padding: 10px; background: var(--bg-color); border-radius: 8px; font-size: 0.9em;">
+                <strong>🔐 登录状态:</strong>
+                <div id="login-info" style="margin-top: 8px;">
+                    <span id="token-status">检测中...</span>
+                    <button id="refresh-auth" class="btn btn-small" style="margin-left: 10px;">刷新</button>
+                </div>
+            </div>
             <div class="dependencies">
                 <div class="dependency-item" data-dep="mp4box">
                     <span class="dep-name">MP4Box</span>
@@ -108,12 +116,55 @@
 
             <div class="progress-section" id="progress-section" style="display:none;">
                 <h2>📥 下载进度 / Download Progress</h2>
+                
+                <div class="download-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">当前任务:</span>
+                        <span class="stat-value" id="current-task">等待开始...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">下载速度:</span>
+                        <span class="stat-value" id="download-speed">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">已用时间:</span>
+                        <span class="stat-value" id="elapsed-time">00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">剩余时间:</span>
+                        <span class="stat-value" id="remaining-time">--</span>
+                    </div>
+                </div>
+                
                 <div class="progress-container">
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill"></div>
                     </div>
                     <div class="progress-text" id="progress-text">0%</div>
                 </div>
+                
+                <div class="track-progress" id="track-progress" style="display:none;">
+                    <h4>曲目详情</h4>
+                    <div class="track-info">
+                        <div class="track-name" id="track-name">--</div>
+                        <div class="track-stats">
+                            <span>大小: <span id="track-size">--</span></span>
+                            <span>质量: <span id="track-quality">--</span></span>
+                        </div>
+                    </div>
+                    <div class="track-progress-bar">
+                        <div class="track-progress-fill" id="track-progress-fill"></div>
+                    </div>
+                </div>
+                
+                <!-- 核心输出监控 -->
+                <div class="core-output" id="core-output" style="margin-top: 20px;">
+                    <h4>🔧 核心程序输出</h4>
+                    <div class="output-log" id="core-log">
+                        <div class="log-entry core-log-entry">等待核心程序输出...</div>
+                    </div>
+                </div>
+                
                 <div class="status-log" id="status-log"></div>
             </div>
         </div>
