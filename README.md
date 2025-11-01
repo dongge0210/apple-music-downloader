@@ -1,5 +1,27 @@
 English / [简体中文](./README-CN.md)
 
+## 🎉 NEW: Web GUI Interface
+
+**We now have a friendly web interface!** No more complex command-line usage. Just run `./start-web.sh` (or `start-web.bat` on Windows) and access the downloader through your browser!
+
+👉 **[Web GUI Documentation](./README-WEB-GUI.md)** - Complete guide for the web interface
+
+![Web GUI Screenshot](https://github.com/user-attachments/assets/f82a486a-233a-4bb2-ba34-69b1ab511be3)
+
+### Quick Start with Web GUI
+
+```bash
+# On Linux/Mac
+./start-web.sh
+
+# On Windows
+start-web.bat
+
+# Then open http://localhost:8080 in your browser
+```
+
+---
+
 ### ！！Must be installed first [MP4Box](https://gpac.io/downloads/gpac-nightly-builds/)，And confirm [MP4Box](https://gpac.io/downloads/gpac-nightly-builds/) Correctly added to environment variables
 
 ### Add features
