@@ -67,7 +67,7 @@ func (ws *WebServer) Start(port string) error {
 				http.Error(w, "Failed to load page", http.StatusInternalServerError)
 				return
 			}
-			w.Header().Set("Content-Type", "text/html")
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Write(content)
 			return
 		}
@@ -75,6 +75,7 @@ func (ws *WebServer) Start(port string) error {
 	})
 
 	// API endpoints
+	http.HandleFunc("/api/system/info", ws.handleSystemInfo)
 	http.HandleFunc("/api/dependencies/check", ws.handleCheckDependencies)
 	http.HandleFunc("/api/dependencies/install/", ws.handleInstallDependency)
 	http.HandleFunc("/api/wrapper/start", ws.handleStartWrapper)
@@ -86,6 +87,25 @@ func (ws *WebServer) Start(port string) error {
 	addr := ":" + port
 	log.Printf("Web server starting on http://localhost%s\n", addr)
 	return http.ListenAndServe(addr, nil)
+}
+
+func (ws *WebServer) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	goVersion := runtime.Version()
+	osInfo := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	
+	info := map[string]string{
+		"os":      osInfo,
+		"go":      goVersion,
+		"runtime": fmt.Sprintf("Go %s on %s", goVersion, osInfo),
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(info)
 }
 
 func (ws *WebServer) handleCheckDependencies(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +121,7 @@ func (ws *WebServer) handleCheckDependencies(w http.ResponseWriter, r *http.Requ
 		"wrapper":   checkWrapperService(),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(deps)
 }
 
@@ -110,9 +130,26 @@ func checkDependency(name string) DependencyStatus {
 	if err != nil {
 		return DependencyStatus{Installed: false}
 	}
+	
+	// Try to get version info
+	version := ""
+	versionCmd := exec.Command(name, "--version")
+	if output, err := versionCmd.CombinedOutput(); err == nil {
+		// Get first line of version output
+		lines := strings.Split(string(output), "\n")
+		if len(lines) > 0 {
+			version = strings.TrimSpace(lines[0])
+			// Limit version string length
+			if len(version) > 50 {
+				version = version[:50] + "..."
+			}
+		}
+	}
+	
 	return DependencyStatus{
 		Installed: true,
 		Path:      path,
+		Version:   version,
 	}
 }
 
@@ -146,7 +183,7 @@ func (ws *WebServer) handleInstallDependency(w http.ResponseWriter, r *http.Requ
 		result["success"] = true
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -235,12 +272,12 @@ func (ws *WebServer) handleStartWrapper(w http.ResponseWriter, r *http.Request) 
 		result["error"] = "Please start the wrapper service manually. See: https://github.com/zhaarey/wrapper"
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(result)
 }
 
 func (ws *WebServer) handleConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	if r.Method == http.MethodGet {
 		// Return current config
@@ -319,7 +356,7 @@ func (ws *WebServer) handleSearch(w http.ResponseWriter, r *http.Request) {
 		"message": "Search feature is available via command line. Use: --search " + req.Type + " \"" + req.Query + "\"",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -363,7 +400,7 @@ func (ws *WebServer) handleDownload(w http.ResponseWriter, r *http.Request) {
 		"download_id": downloadID,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(response)
 }
 

@@ -93,10 +93,14 @@ h2 {
 }
 
 .dep-status {
-    font-size: 0.9em;
+    font-size: 0.85em;
     padding: 5px 10px;
-    border-radius: 20px;
+    border-radius: 8px;
     margin: 0 10px;
+    white-space: pre-line;
+    text-align: center;
+    line-height: 1.4;
+    min-width: 100px;
 }
 
 .dep-status.checking {
@@ -107,11 +111,13 @@ h2 {
 .dep-status.installed {
     background: var(--success-color);
     color: white;
+    font-weight: 600;
 }
 
 .dep-status.missing {
     background: var(--danger-color);
     color: white;
+    font-weight: 600;
 }
 
 .tabs {
@@ -244,6 +250,9 @@ h2 {
 
 .progress-section {
     margin-top: 30px;
+    padding: 20px;
+    background: var(--bg-color);
+    border-radius: 15px;
 }
 
 .progress-container {
@@ -252,11 +261,13 @@ h2 {
 
 .progress-bar {
     width: 100%;
-    height: 30px;
-    background: var(--bg-color);
-    border-radius: 15px;
+    height: 40px;
+    background: white;
+    border-radius: 20px;
     overflow: hidden;
     position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--border-color);
 }
 
 .progress-fill {
@@ -264,13 +275,20 @@ h2 {
     background: linear-gradient(90deg, var(--primary-color), var(--success-color));
     transition: width 0.3s ease;
     width: 0%;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
 }
 
 .progress-text {
     text-align: center;
     margin-top: 10px;
-    font-weight: 600;
-    font-size: 1.2em;
+    font-weight: 700;
+    font-size: 1.5em;
+    color: var(--primary-color);
 }
 
 .status-log {

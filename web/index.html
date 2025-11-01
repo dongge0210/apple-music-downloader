@@ -14,38 +14,41 @@
         </header>
 
         <div id="dependency-status" class="status-section">
-            <h2>📦 Dependency Status</h2>
+            <h2>📦 依赖状态检测 / Dependency Status</h2>
+            <div class="env-info" id="env-info" style="margin-bottom: 15px; padding: 10px; background: var(--bg-color); border-radius: 8px; font-size: 0.9em;">
+                <strong>🖥️ 系统环境:</strong> <span id="system-info">检测中...</span>
+            </div>
             <div class="dependencies">
                 <div class="dependency-item" data-dep="mp4box">
                     <span class="dep-name">MP4Box</span>
-                    <span class="dep-status">Checking...</span>
-                    <button class="install-btn" style="display:none;">Install</button>
+                    <span class="dep-status">检测中...</span>
+                    <button class="install-btn" style="display:none;">安装</button>
                 </div>
                 <div class="dependency-item" data-dep="mp4decrypt">
                     <span class="dep-name">mp4decrypt</span>
-                    <span class="dep-status">Checking...</span>
-                    <button class="install-btn" style="display:none;">Install</button>
+                    <span class="dep-status">检测中...</span>
+                    <button class="install-btn" style="display:none;">安装</button>
                 </div>
                 <div class="dependency-item" data-dep="ffmpeg">
                     <span class="dep-name">ffmpeg</span>
-                    <span class="dep-status">Checking...</span>
-                    <button class="install-btn" style="display:none;">Install</button>
+                    <span class="dep-status">检测中...</span>
+                    <button class="install-btn" style="display:none;">安装</button>
                 </div>
                 <div class="dependency-item" data-dep="wrapper">
-                    <span class="dep-name">Wrapper Service</span>
-                    <span class="dep-status">Checking...</span>
-                    <button class="start-btn" style="display:none;">Start</button>
+                    <span class="dep-name">Wrapper解密服务</span>
+                    <span class="dep-status">检测中...</span>
+                    <button class="start-btn" style="display:none;">启动</button>
                 </div>
             </div>
         </div>
 
         <div class="main-section">
             <div class="input-section">
-                <h2>🔍 Download Options</h2>
+                <h2>🔍 下载选项 / Download Options</h2>
                 
                 <div class="tabs">
-                    <button class="tab-btn active" data-tab="url">URL Download</button>
-                    <button class="tab-btn" data-tab="search">Search</button>
+                    <button class="tab-btn active" data-tab="url">URL 下载</button>
+                    <button class="tab-btn" data-tab="search">搜索</button>
                 </div>
 
                 <div id="url-tab" class="tab-content active">
@@ -57,54 +60,54 @@
 
                 <div id="search-tab" class="tab-content">
                     <div class="form-group">
-                        <label for="search-type">Search Type:</label>
+                        <label for="search-type">搜索类型:</label>
                         <select id="search-type">
-                            <option value="song">Song</option>
-                            <option value="album">Album</option>
-                            <option value="artist">Artist</option>
+                            <option value="song">歌曲</option>
+                            <option value="album">专辑</option>
+                            <option value="artist">艺术家</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="search-query">Search Query:</label>
-                        <input type="text" id="search-query" placeholder="Enter song, album or artist name..." />
+                        <label for="search-query">搜索关键词:</label>
+                        <input type="text" id="search-query" placeholder="输入歌曲、专辑或艺术家名称..." />
                     </div>
-                    <button id="search-btn" class="btn btn-secondary">Search</button>
+                    <button id="search-btn" class="btn btn-secondary">搜索</button>
                 </div>
 
                 <div class="form-group">
-                    <label for="quality">Quality:</label>
+                    <label for="quality">音质选择:</label>
                     <select id="quality">
-                        <option value="alac">Lossless (ALAC)</option>
-                        <option value="aac">High Quality (AAC)</option>
-                        <option value="atmos">Dolby Atmos</option>
+                        <option value="alac">无损音质 (ALAC)</option>
+                        <option value="aac">高品质 (AAC)</option>
+                        <option value="atmos">杜比全景声 (Dolby Atmos)</option>
                     </select>
                 </div>
 
                 <div class="form-group checkbox-group">
                     <label>
                         <input type="checkbox" id="select-mode" />
-                        <span>Select specific tracks</span>
+                        <span>选择特定曲目</span>
                     </label>
                     <label>
                         <input type="checkbox" id="download-lyrics" checked />
-                        <span>Download lyrics</span>
+                        <span>下载歌词</span>
                     </label>
                     <label>
                         <input type="checkbox" id="embed-cover" checked />
-                        <span>Embed cover art</span>
+                        <span>嵌入封面</span>
                     </label>
                 </div>
 
-                <button id="download-btn" class="btn btn-primary">Start Download</button>
+                <button id="download-btn" class="btn btn-primary">开始下载</button>
             </div>
 
             <div class="search-results" id="search-results" style="display:none;">
-                <h3>Search Results</h3>
+                <h3>搜索结果</h3>
                 <div id="results-list"></div>
             </div>
 
             <div class="progress-section" id="progress-section" style="display:none;">
-                <h2>📥 Download Progress</h2>
+                <h2>📥 下载进度 / Download Progress</h2>
                 <div class="progress-container">
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill"></div>
@@ -116,22 +119,22 @@
         </div>
 
         <div class="config-section">
-            <h2>⚙️ Configuration</h2>
-            <button id="config-btn" class="btn btn-secondary">Edit Config</button>
+            <h2>⚙️ 配置设置 / Configuration</h2>
+            <button id="config-btn" class="btn btn-secondary">编辑配置</button>
             <div id="config-panel" class="config-panel" style="display:none;">
                 <div class="form-group">
-                    <label for="media-user-token">Media User Token:</label>
-                    <input type="password" id="media-user-token" placeholder="Required for lyrics and AAC-LC" />
+                    <label for="media-user-token">Media User Token (用于歌词和AAC-LC):</label>
+                    <input type="password" id="media-user-token" placeholder="获取歌词和AAC-LC必需" />
                 </div>
                 <div class="form-group">
-                    <label for="storefront">Storefront:</label>
-                    <input type="text" id="storefront" placeholder="us, jp, ca, etc." />
+                    <label for="storefront">Storefront (区域):</label>
+                    <input type="text" id="storefront" placeholder="us, jp, cn 等" />
                 </div>
                 <div class="form-group">
-                    <label for="save-folder">Save Folder:</label>
+                    <label for="save-folder">保存文件夹:</label>
                     <input type="text" id="save-folder" placeholder="AM-DL downloads" />
                 </div>
-                <button id="save-config-btn" class="btn btn-primary">Save Config</button>
+                <button id="save-config-btn" class="btn btn-primary">保存配置</button>
             </div>
         </div>
     </div>

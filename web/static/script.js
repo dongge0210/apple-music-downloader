@@ -6,6 +6,7 @@ let currentDownloadId = null;
 document.addEventListener('DOMContentLoaded', () => {
     initializeTabs();
     initializeButtons();
+    checkSystemInfo();
     checkDependencies();
     loadConfig();
 });
@@ -54,6 +55,21 @@ function initializeButtons() {
     });
 }
 
+// Check system info
+async function checkSystemInfo() {
+    try {
+        const response = await fetch('/api/system/info');
+        const data = await response.json();
+        
+        const systemInfoEl = document.getElementById('system-info');
+        if (systemInfoEl && data.runtime) {
+            systemInfoEl.textContent = data.runtime;
+        }
+    } catch (error) {
+        console.error('Failed to check system info:', error);
+    }
+}
+
 // Check dependencies status
 async function checkDependencies() {
     try {
@@ -82,13 +98,21 @@ function updateDependencyStatus(dep, status) {
     depItem.classList.remove('installed', 'missing');
     
     if (status.installed) {
-        statusSpan.textContent = '✓ Installed';
+        let statusText = '✓ 已安装';
+        if (status.version) {
+            statusText += '\n' + status.version;
+        } else if (status.path) {
+            const pathParts = status.path.split('/');
+            statusText += '\n(' + pathParts[pathParts.length - 1] + ')';
+        }
+        statusSpan.textContent = statusText;
         statusSpan.classList.add('installed');
         depItem.classList.add('installed');
+        statusSpan.title = status.path || '';
         if (installBtn) installBtn.style.display = 'none';
         if (startBtn) startBtn.style.display = 'none';
     } else {
-        statusSpan.textContent = '✗ Missing';
+        statusSpan.textContent = '✗ 未安装';
         statusSpan.classList.add('missing');
         depItem.classList.add('missing');
         if (installBtn) installBtn.style.display = 'inline-block';
