@@ -720,6 +720,7 @@ func convertIfNeeded(track *task.Track) {
 		return
 	}
 
+	// 生成主格式（如 flac）
 	args, err := buildFFmpegArgs(Config.FFmpegPath, srcPath, outPath, targetFmt, Config.ConvertExtraArgs)
 	if err != nil {
 		fmt.Println("Conversion config error:", err)
@@ -738,6 +739,32 @@ func convertIfNeeded(track *task.Track) {
 	}
 	fmt.Printf("Conversion completed in %s: %s\n", time.Since(start).Truncate(time.Millisecond), filepath.Base(outPath))
 
+	// 生成额外格式（如 mp3）
+	if len(Config.ConvertExtraFormats) > 0 {
+		for _, extraFmt := range Config.ConvertExtraFormats {
+			extraFmt = strings.ToLower(extraFmt)
+			if extraFmt == targetFmt {
+				continue
+			}
+			extraPath := outBase + "." + extraFmt
+			extraArgs, err := buildFFmpegArgs(Config.FFmpegPath, srcPath, extraPath, extraFmt, Config.ConvertExtraArgs)
+			if err != nil {
+				fmt.Printf("Extra conversion config error (%s): %v\n", extraFmt, err)
+				continue
+			}
+			fmt.Printf("Converting -> %s ...\n", extraFmt)
+			extraCmd := exec.Command(Config.FFmpegPath, extraArgs...)
+			extraCmd.Stdout = nil
+			extraCmd.Stderr = nil
+			extraStart := time.Now()
+			if err := extraCmd.Run(); err != nil {
+				fmt.Printf("Extra conversion failed (%s): %v\n", extraFmt, err)
+				continue
+			}
+			fmt.Printf("Extra conversion completed in %s: %s\n", time.Since(extraStart).Truncate(time.Millisecond), filepath.Base(extraPath))
+		}
+	}
+
 	if !Config.ConvertKeepOriginal {
 		if err := os.Remove(srcPath); err != nil {
 			fmt.Println("Failed to remove original after conversion:", err)
@@ -747,7 +774,7 @@ func convertIfNeeded(track *task.Track) {
 			fmt.Println("Original removed.")
 		}
 	} else {
-		// Keep both but point track to new file (optional decision)
+		// Keep both but point track to新文件（主格式）
 		track.SavePath = outPath
 		track.SaveName = filepath.Base(outPath)
 	}
@@ -960,7 +987,7 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 		tags = append(tags, fmt.Sprintf("cover=%s", track.CoverPath))
 	}
 	tagsString := strings.Join(tags, ":")
-	cmd := exec.Command("MP4Box", "-itags", tagsString, trackPath)
+	cmd := exec.Command("F:\\apple-music-downloader\\mp4box.exe", "-itags", tagsString, trackPath)
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Embed failed: %v\n", err)
 		counter.Error++
@@ -1138,7 +1165,7 @@ func ripStation(albumId string, token string, storefront string, mediaUserToken 
 			tags = append(tags, fmt.Sprintf("cover=%s", station.CoverPath))
 		}
 		tagsString := strings.Join(tags, ":")
-		cmd := exec.Command("MP4Box", "-itags", tagsString, trackPath)
+		cmd := exec.Command("F:\\apple-music-downloader\\mp4box.exe", "-itags", tagsString, trackPath)
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("Embed failed: %v\n", err)
 		}
@@ -1338,7 +1365,7 @@ func ripAlbum(albumId string, token string, storefront string, mediaUserToken st
 	os.MkdirAll(albumFolderPath, os.ModePerm)
 	album.SaveName = albumFolderName
 	fmt.Println(albumFolderName)
-	if Config.SaveArtistCover && len(meta.Data[0].Relationships.Artists.Data) > 0{
+	if Config.SaveArtistCover && len(meta.Data[0].Relationships.Artists.Data) > 0 {
 		if meta.Data[0].Relationships.Artists.Data[0].Attributes.Artwork.Url != "" {
 			_, err = writeCover(singerFolder, "folder", meta.Data[0].Relationships.Artists.Data[0].Attributes.Artwork.Url)
 			if err != nil {
@@ -1526,7 +1553,7 @@ func ripPlaylist(playlistId string, token string, storefront string, mediaUserTo
 	}
 	fmt.Printf("📁 Creating save directory: %s\n", singerFolder)
 	sendCoreOutput(fmt.Sprintf("📁 Creating save directory: %s", singerFolder), "info")
-	
+
 	err = os.MkdirAll(singerFolder, os.ModePerm)
 	if err != nil {
 		fmt.Printf("❌ Failed to create directory: %v\n", err)
@@ -1685,7 +1712,7 @@ func ripPlaylist(playlistId string, token string, storefront string, mediaUserTo
 	totalTracks := len(selected)
 	fmt.Printf("🎵 Starting download of %d tracks...\n", totalTracks)
 	sendWebProgress(fmt.Sprintf("🎵 Starting download of %d tracks...", totalTracks), "info")
-	
+
 	for trackIndex := range playlist.Tracks {
 		trackNum := trackIndex + 1
 		if isInArray(okDict[playlistId], trackNum) {
@@ -1696,12 +1723,12 @@ func ripPlaylist(playlistId string, token string, storefront string, mediaUserTo
 		if isInArray(selected, trackNum) {
 			trackName := playlist.Tracks[trackIndex].Resp.Attributes.Name
 			progress := float64(trackIndex+1) / float64(totalTracks) * 100
-			progressMsg := fmt.Sprintf("📊 Progress: %.1f%% (%d/%d) - Downloading: %s", 
+			progressMsg := fmt.Sprintf("📊 Progress: %.1f%% (%d/%d) - Downloading: %s",
 				progress, trackIndex+1, totalTracks, trackName)
-			
+
 			fmt.Printf("%s\n", progressMsg)
 			sendWebProgress(progressMsg, "info")
-			
+
 			ripTrack(&playlist.Tracks[trackIndex], token, mediaUserToken)
 		}
 	}
@@ -1810,14 +1837,14 @@ func sendWebProgress(message string, msgType string) {
 // Send core output to web interface
 func sendCoreOutput(message string, msgType string) {
 	if webProgressCallback != nil {
-		webProgressCallback(message, "core-" + msgType)
+		webProgressCallback(message, "core-"+msgType)
 	}
 }
 
 func main() {
 	fmt.Println("🔧 Loading configuration...")
 	sendCoreOutput("🔧 Loading configuration...", "info")
-	
+
 	err := loadConfig()
 	if err != nil {
 		fmt.Printf("❌ load Config failed: %v\n", err)
@@ -1826,19 +1853,18 @@ func main() {
 	}
 	fmt.Printf("✅ Configuration loaded successfully\n")
 	sendCoreOutput("✅ Configuration loaded successfully", "success")
-	
+
 	fmt.Printf("📁 ALAC save folder: %s\n", Config.AlacSaveFolder)
 	sendCoreOutput(fmt.Sprintf("📁 ALAC save folder: %s", Config.AlacSaveFolder), "info")
-	
+
 	fmt.Printf("📁 Atmos save folder: %s\n", Config.AtmosSaveFolder)
 	sendCoreOutput(fmt.Sprintf("📁 Atmos save folder: %s", Config.AtmosSaveFolder), "info")
-	
+
 	fmt.Printf("📁 AAC save folder: %s\n", Config.AacSaveFolder)
 	sendCoreOutput(fmt.Sprintf("📁 AAC save folder: %s", Config.AacSaveFolder), "info")
-	
+
 	fmt.Printf("🌐 Storefront: %s\n", Config.Storefront)
 	sendCoreOutput(fmt.Sprintf("🌐 Storefront: %s", Config.Storefront), "info")
-
 
 	var web_mode bool
 	var web_port string
@@ -2143,7 +2169,7 @@ func mvDownloader(adamID string, saveDir string, token string, storefront string
 	defer os.Remove(covPath)
 
 	tagsString := strings.Join(tags, ":")
-	muxCmd := exec.Command("MP4Box", "-itags", tagsString, "-quiet", "-add", vidPath, "-add", audPath, "-keep-utc", "-new", mvOutPath)
+	muxCmd := exec.Command("F:\\apple-music-downloader\\mp4box.exe", "-itags", tagsString, "-quiet", "-add", vidPath, "-add", audPath, "-keep-utc", "-new", mvOutPath)
 	fmt.Printf("MV Remuxing...")
 	if err := muxCmd.Run(); err != nil {
 		fmt.Printf("MV mux failed: %v\n", err)

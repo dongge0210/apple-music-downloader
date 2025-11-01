@@ -1,6 +1,5 @@
 media-user-token: "Ai1TM51xrMasKHwAPVFKTwmkZ+anCYWlyh2AO2qSSlnlezUU5SIsjEtRa16FxUdq0LPTamqajD8rTEh71X3Xe71ARFN6P3wT+9+bw51N2TRWMkrepkz48xWYoNgp3u9arXvKo5/cONWzIXJai8yBwODq48OdbZ88ruYloFGghnhLSJrOEJc01/TS72g7Fvfdule9UaHRu0aDzCYbAJdB/gdghsDtWkT4aa6BZvTEtgNyRbL9/Q=="
-authorization-token: "your-authorization-token"
-language: "cn"
+language: ""
 lrc-type: "lyrics"
 lrc-format: "lrc"
 embed-lrc: true
@@ -30,14 +29,17 @@ artist-folder-format: "{UrlArtistName}"
 explicit-choice: "[E]"
 clean-choice: "[C]"
 apple-master-choice: "[M]"
-use-songinfo-for-playlist: false
-dl-albumcover-for-playlist: false
+use-songinfo-for-playlist: true
+dl-albumcover-for-playlist: true
 mv-audio-type: atmos
 mv-max: 2160
 storefront: "cn"
-convert-after-download: false
+convert-after-download: true
 convert-format: "flac"
-convert-keep-original: false
+convert-keep-original: true
 convert-skip-if-source-matches: false
-ffmpeg-path: "ffmpeg"
+ffmpeg-path: "./ffmpeg.exe"
+mp4box-path: "D:/GPAC/MP4Box.exe"
 convert-extra-args: ""
+convert-extra-formats:
+- mp3
