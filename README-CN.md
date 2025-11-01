@@ -1,5 +1,27 @@
 [English](./README.md) / 简体中文
 
+## 🎉 新功能：友好的可视化界面
+
+**我们现在有了一个友好的Web界面！** 不再需要复杂的命令行操作。只需运行 `./start-web.sh`（Windows上运行 `start-web.bat`），然后通过浏览器访问下载器！
+
+👉 **[Web界面文档](./README-WEB-GUI.md)** - Web界面完整使用指南
+
+![Web界面截图](https://github.com/user-attachments/assets/f82a486a-233a-4bb2-ba34-69b1ab511be3)
+
+### Web界面快速开始
+
+```bash
+# 在 Linux/Mac 上
+./start-web.sh
+
+# 在 Windows 上
+start-web.bat
+
+# 然后在浏览器中打开 http://localhost:8080
+```
+
+---
+
 ### ！！必须先安装[MP4Box](https://gpac.io/downloads/gpac-nightly-builds/)，并确认[MP4Box](https://gpac.io/downloads/gpac-nightly-builds/)已正确添加到环境变量
 
 ### 添加功能
