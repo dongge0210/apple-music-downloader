@@ -5,5 +5,12 @@
 !go.mod
 !go.sum
 !main.go
+!webserver.go
 !README.md
+!README-CN.md
+!README-WEB-GUI.md
+!start-web.sh
+!start-web.bat
 !utils/*
+!web/
+!web/**

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Music Downloader</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Apple Music Downloader</h1>
+            <p>Download your favorite music in high quality</p>
+        </header>
+
+        <div id="dependency-status" class="status-section">
+            <h2>📦 Dependency Status</h2>
+            <div class="dependencies">
+                <div class="dependency-item" data-dep="mp4box">
+                    <span class="dep-name">MP4Box</span>
+                    <span class="dep-status">Checking...</span>
+                    <button class="install-btn" style="display:none;">Install</button>
+                </div>
+                <div class="dependency-item" data-dep="mp4decrypt">
+                    <span class="dep-name">mp4decrypt</span>
+                    <span class="dep-status">Checking...</span>
+                    <button class="install-btn" style="display:none;">Install</button>
+                </div>
+                <div class="dependency-item" data-dep="ffmpeg">
+                    <span class="dep-name">ffmpeg</span>
+                    <span class="dep-status">Checking...</span>
+                    <button class="install-btn" style="display:none;">Install</button>
+                </div>
+                <div class="dependency-item" data-dep="wrapper">
+                    <span class="dep-name">Wrapper Service</span>
+                    <span class="dep-status">Checking...</span>
+                    <button class="start-btn" style="display:none;">Start</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-section">
+            <div class="input-section">
+                <h2>🔍 Download Options</h2>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="url">URL Download</button>
+                    <button class="tab-btn" data-tab="search">Search</button>
+                </div>
+
+                <div id="url-tab" class="tab-content active">
+                    <div class="form-group">
+                        <label for="music-url">Apple Music URL:</label>
+                        <input type="text" id="music-url" placeholder="https://music.apple.com/us/album/..." />
+                    </div>
+                </div>
+
+                <div id="search-tab" class="tab-content">
+                    <div class="form-group">
+                        <label for="search-type">Search Type:</label>
+                        <select id="search-type">
+                            <option value="song">Song</option>
+                            <option value="album">Album</option>
+                            <option value="artist">Artist</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-query">Search Query:</label>
+                        <input type="text" id="search-query" placeholder="Enter song, album or artist name..." />
+                    </div>
+                    <button id="search-btn" class="btn btn-secondary">Search</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="quality">Quality:</label>
+                    <select id="quality">
+                        <option value="alac">Lossless (ALAC)</option>
+                        <option value="aac">High Quality (AAC)</option>
+                        <option value="atmos">Dolby Atmos</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="select-mode" />
+                        <span>Select specific tracks</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="download-lyrics" checked />
+                        <span>Download lyrics</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="embed-cover" checked />
+                        <span>Embed cover art</span>
+                    </label>
+                </div>
+
+                <button id="download-btn" class="btn btn-primary">Start Download</button>
+            </div>
+
+            <div class="search-results" id="search-results" style="display:none;">
+                <h3>Search Results</h3>
+                <div id="results-list"></div>
+            </div>
+
+            <div class="progress-section" id="progress-section" style="display:none;">
+                <h2>📥 Download Progress</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0%</div>
+                </div>
+                <div class="status-log" id="status-log"></div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2>⚙️ Configuration</h2>
+            <button id="config-btn" class="btn btn-secondary">Edit Config</button>
+            <div id="config-panel" class="config-panel" style="display:none;">
+                <div class="form-group">
+                    <label for="media-user-token">Media User Token:</label>
+                    <input type="password" id="media-user-token" placeholder="Required for lyrics and AAC-LC" />
+                </div>
+                <div class="form-group">
+                    <label for="storefront">Storefront:</label>
+                    <input type="text" id="storefront" placeholder="us, jp, ca, etc." />
+                </div>
+                <div class="form-group">
+                    <label for="save-folder">Save Folder:</label>
+                    <input type="text" id="save-folder" placeholder="AM-DL downloads" />
+                </div>
+                <button id="save-config-btn" class="btn btn-primary">Save Config</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
