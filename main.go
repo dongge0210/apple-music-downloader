@@ -1779,16 +1779,12 @@ func main() {
 		fmt.Printf("load Config failed: %v", err)
 		return
 	}
-	token, err := ampapi.GetToken()
-	if err != nil {
-		if Config.AuthorizationToken != "" && Config.AuthorizationToken != "your-authorization-token" {
-			token = strings.Replace(Config.AuthorizationToken, "Bearer ", "", -1)
-		} else {
-			fmt.Println("Failed to get token.")
-			return
-		}
-	}
+
+	var web_mode bool
+	var web_port string
 	var search_type string
+	pflag.BoolVar(&web_mode, "web", false, "Start web GUI interface")
+	pflag.StringVar(&web_port, "port", "8080", "Web server port (default: 8080)")
 	pflag.StringVar(&search_type, "search", "", "Search for 'album', 'song', or 'artist'. Provide query after flags.")
 	pflag.BoolVar(&dl_atmos, "atmos", false, "Enable atmos download mode")
 	pflag.BoolVar(&dl_aac, "aac", false, "Enable adm-aac download mode")
@@ -1804,12 +1800,34 @@ func main() {
 
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] [url1 url2 ...]\n", "[main | main.exe | go run main.go]")
+		fmt.Fprintf(os.Stderr, "Web GUI Usage: %s --web [--port 8080]\n", "[main | main.exe | go run main.go]")
 		fmt.Fprintf(os.Stderr, "Search Usage: %s --search [album|song|artist] [query]\n", "[main | main.exe | go run main.go]")
 		fmt.Println("\nOptions:")
 		pflag.PrintDefaults()
 	}
 
 	pflag.Parse()
+
+	// Start web server if --web flag is present
+	if web_mode {
+		fmt.Println("🎵 Starting Apple Music Downloader Web GUI...")
+		ws := NewWebServer()
+		if err := ws.Start(web_port); err != nil {
+			fmt.Printf("Failed to start web server: %v\n", err)
+		}
+		return
+	}
+
+	token, err := ampapi.GetToken()
+	if err != nil {
+		if Config.AuthorizationToken != "" && Config.AuthorizationToken != "your-authorization-token" {
+			token = strings.Replace(Config.AuthorizationToken, "Bearer ", "", -1)
+		} else {
+			fmt.Println("Failed to get token.")
+			return
+		}
+	}
+
 	Config.AlacMax = *alac_max
 	Config.AtmosMax = *atmos_max
 	Config.AacType = *aac_type
