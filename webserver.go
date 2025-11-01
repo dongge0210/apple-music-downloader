@@ -168,7 +168,9 @@ func installDependency(name string) error {
 func installMP4Box(osType string) error {
 	switch osType {
 	case "linux":
-		return runCommand("apt-get", "update")
+		if err := runCommand("apt-get", "update"); err != nil {
+			return err
+		}
 		return runCommand("apt-get", "install", "-y", "gpac")
 	case "darwin":
 		return runCommand("brew", "install", "gpac")
@@ -194,7 +196,9 @@ func installMP4Decrypt(osType string) error {
 func installFFmpeg(osType string) error {
 	switch osType {
 	case "linux":
-		return runCommand("apt-get", "update")
+		if err := runCommand("apt-get", "update"); err != nil {
+			return err
+		}
 		return runCommand("apt-get", "install", "-y", "ffmpeg")
 	case "darwin":
 		return runCommand("brew", "install", "ffmpeg")
@@ -284,8 +288,11 @@ func (ws *WebServer) handleConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveConfigToFile() error {
-	// Implementation to save config back to YAML file
-	// For now, we'll skip this as it requires YAML marshaling
+	// Note: This is a simplified implementation that updates the in-memory config
+	// The config changes will be effective for the current session
+	// For persistent storage, consider implementing YAML file write functionality
+	// TODO: Implement full YAML marshaling and file write
+	log.Println("Config updated in memory (changes will persist for current session)")
 	return nil
 }
 
@@ -305,17 +312,11 @@ func (ws *WebServer) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Implement actual search using ampapi
-	results := []map[string]string{
-		{
-			"name":   "Example Result",
-			"artist": "Example Artist",
-			"url":    "https://music.apple.com/example",
-		},
-	}
-
+	// Return placeholder message since full search integration requires token management
+	// Users should use the command-line search feature for now
 	response := map[string]interface{}{
-		"results": results,
+		"results": []map[string]string{},
+		"message": "Search feature is available via command line. Use: --search " + req.Type + " \"" + req.Query + "\"",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -373,6 +374,7 @@ func (ws *WebServer) processDownload(downloadID, url, quality string) {
 	}
 
 	progress.addMessage("Starting download...", "info")
+	progress.addMessage("Note: Full download integration is in progress. For production use, please use the command-line interface.", "info")
 
 	// Set quality flags
 	switch quality {
@@ -387,18 +389,16 @@ func (ws *WebServer) processDownload(downloadID, url, quality string) {
 		dl_aac = false
 	}
 
-	// Simulate download process
-	// In real implementation, this would call the actual download functions
-	progress.setPercent(10)
-	progress.addMessage("Processing URL...", "info")
+	// Basic implementation - shows the concept
+	// Full integration requires coordinating with existing download logic in main.go
+	progress.setPercent(20)
+	progress.addMessage("URL validated: " + url, "info")
 	
-	time.Sleep(1 * time.Second)
 	progress.setPercent(50)
-	progress.addMessage("Downloading tracks...", "info")
+	progress.addMessage("Quality selected: " + quality, "info")
 	
-	time.Sleep(2 * time.Second)
 	progress.setPercent(100)
-	progress.addMessage("Download completed!", "success")
+	progress.addMessage("Please use command line for actual downloads: go run main.go " + url, "info")
 	progress.setStatus("completed")
 }
 

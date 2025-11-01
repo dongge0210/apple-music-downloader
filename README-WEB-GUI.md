@@ -8,17 +8,19 @@
 
 ### 🎉 New Feature: Friendly Web Interface
 
-We've added a beautiful and user-friendly web interface that makes downloading music from Apple Music easier than ever!
+We've added a beautiful and user-friendly web interface that makes managing the Apple Music Downloader easier than ever!
+
+> **Note**: This is an initial release focusing on dependency management and configuration. Full download functionality integration is in progress. For actual downloads, please use the command-line interface.
 
 ### ✨ Features
 
 - **Visual Interface**: Modern, responsive web UI with a clean design
 - **Auto Dependency Check**: Automatically checks if required dependencies are installed
-- **Dependency Installation**: Guided installation for MP4Box, mp4decrypt, and ffmpeg
+- **Dependency Installation**: Guided installation for MP4Box, mp4decrypt, and ffmpeg (Linux/Mac)
 - **Easy Configuration**: Configure all settings through the web interface
-- **Search Functionality**: Search for songs, albums, or artists directly from the UI
-- **Real-time Progress**: Track download progress with visual indicators
-- **Multiple Quality Options**: Choose between ALAC (Lossless), AAC, or Dolby Atmos
+- **URL Input Interface**: User-friendly interface for entering Apple Music URLs
+- **Quality Selection**: Easy selection between ALAC (Lossless), AAC, or Dolby Atmos
+- **Real-time Status**: Visual feedback and status indicators
 
 ### 🚀 Quick Start
 
@@ -175,17 +177,19 @@ The web interface can help you install dependencies automatically (on Linux/Mac 
 
 ### 🎉 新功能：友好的可视化界面
 
-我们添加了一个漂亮且用户友好的Web界面，让从Apple Music下载音乐变得前所未有的简单！
+我们添加了一个漂亮且用户友好的Web界面，让管理Apple Music下载器变得前所未有的简单！
+
+> **注意**：这是专注于依赖管理和配置的初始版本。完整的下载功能集成正在开发中。实际下载请使用命令行界面。
 
 ### ✨ 特性
 
 - **可视化界面**：现代化、响应式的Web UI，设计简洁
 - **自动依赖检查**：自动检查所需依赖是否已安装
-- **依赖安装**：提供MP4Box、mp4decrypt和ffmpeg的安装指导
+- **依赖安装**：提供MP4Box、mp4decrypt和ffmpeg的安装指导（Linux/Mac）
 - **简易配置**：通过Web界面配置所有设置
-- **搜索功能**：直接从UI搜索歌曲、专辑或艺术家
-- **实时进度**：使用可视化指示器跟踪下载进度
-- **多种质量选项**：在ALAC（无损）、AAC或杜比全景声之间选择
+- **URL输入界面**：友好的Apple Music URL输入界面
+- **质量选择**：轻松选择ALAC（无损）、AAC或杜比全景声
+- **实时状态**：可视化反馈和状态指示器
 
 ### 🚀 快速开始
 
